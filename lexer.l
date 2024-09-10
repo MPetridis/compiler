@@ -90,13 +90,14 @@ CCONST  '[^']*'
 ">>"   {print_token(T_INP); return T_INP;}
 "<<"   {print_token(T_OUT); return T_OUT;}
 
+
 {ID} { print_token(T_ID); return T_ID; }
 {ICONST} { print_token(T_ICONST); return T_ICONST; }
 {FCONST} { print_token(T_FCONST); return T_FCONST; }
 {CCONST} { print_token(T_CCONST); return T_CCONST; }
 
-[ \t]              { }
-\n                 { }
+[ \t\n]         ;
+
 
 <<EOF>> { print_token(T_EOF); return T_EOF; }
 .      { yyerror("UNKNOWN CHARACTER."); }

@@ -28,8 +28,7 @@ void mystery_class::try_it()
    ar z;
    static t x;
    char str[100];
-   str = "another \n\
-\tstring!";
+   str = "another \n\\tstring!";
    if (n <= 0)
       x.a = 1.0;
    else
