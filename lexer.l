@@ -1,5 +1,5 @@
 %{
-  #include "tokens.h"
+  #include "syntax.tab.h"
   #include <stdio.h>
   #include <stdlib.h>
   #include <unistd.h>
@@ -93,13 +93,13 @@ CCONST  '[\x20-\x7E']'
 "<<"   {print_token(T_OUT); return T_OUT;}
 
 
-{ID} { print_token(T_ID); return T_ID; }
-{ICONST} { print_token(T_ICONST); return T_ICONST; }
-{FCONST} { print_token(T_FCONST); return T_FCONST; }
-{CCONST} { print_token(T_CCONST); return T_CCONST; }
+{ID} { print_token(T_ID); yylval.strval=strdup(yytext); return T_ID; }
+{ICONST} { print_token(T_ICONST); yylval.intval=str_to_int(yytext); return T_ICONST; }
+{FCONST} { print_token(T_FCONST); yylval.doubleval=str_to_float(yytext); return T_FCONST; }
+{CCONST} { print_token(T_CCONST); yylval.charval=yytext[1]; return T_CCONST; }
 
 \"                          { strcpy(string_buffer,"");    BEGIN(STRING)   ;}
-<STRING>\"                  { BEGIN(INITIAL);              printf("LINE[%d] STRING TOKEN: %s\n",yylineno,string_buffer); return T_STRING;}
+<STRING>\"                  { BEGIN(INITIAL);              printf("LINE[%d] STRING TOKEN: %s\n",yylineno,string_buffer);yylval.strval=strdup(string_buffer); return T_STRING;}
 <STRING>(\\\n|\\\r\n)       { }      
 <STRING>(\\.|[^"\\])        {   
                                 if(strlen(yytext) == 2){
@@ -132,29 +132,11 @@ CCONST  '[\x20-\x7E']'
 [ \t\n]                     {}
 
 
-<<EOF>>                     { print_token(T_EOF); return T_EOF; }
-.                           { yyerror("UNKNOWN CHARACTER."); }
+<<EOF>>                    { print_token(T_EOF); return T_EOF; }
+.                          { yyerror("UNKNOWN CHARACTER."); }
 %%
 
-int main(int argc, char *argv[]) {
-    int token;
-    if(argc > 1){
-        yyval = fopen(argv[1],"r");
-        if(yyval == NULL){
-            perror ("Error opening file");
-            return -1;
-        }
-    }
 
-    do{
-        token = yylex();
-    } while(token != T_EOF);
-
-    fclose(yyval);
-    yyterminate();
-
-    return 0;
-}
 
 void print_token(int token_id) {
     if (token_id == T_ICONST) {
@@ -193,13 +175,7 @@ float hex_to_float(char *str) {
     float floatValue = *((float*)&intValue); 
     return floatValue;
 }
-char str_to_char(char *str){
 
-    if(strlen(str) == 3){
-        
-        return (char) str[1];
-    }
-}
 
 void yyerror(const char *err) {
     if (errorCounter < 5) {

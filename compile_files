@@ -1,0 +1,9 @@
+flex lexer.l
+bison -v -d syntax.y
+gcc syntax.tab.c lex.yy.c -lm
+./a.out c++223/c++223tests/test2.cpp
+
+
+flex lexer.l
+gcc lex.yy.c -lfl
+./a.out c++223/c++223tests/test2.cpp
