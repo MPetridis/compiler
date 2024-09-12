@@ -114,7 +114,9 @@ global_declaration :                  typedef_declaration
                                     | func_declaration
 
 typedef_declaration :                 T_TYPEDEF typename T_ID dims T_SEMI {hashtbl_insert(hashtbl,$3,NULL,scope);}
-                                    | T_TYPEDEF typename T_ID dims error {hashtbl_insert(hashtbl ,$3 ,NULL,scope); yyerror("Forgot semicolon"); yyerrok ; }
+                                      |error typename T_ID dims T_SEMI  {hashtbl_insert(hashtbl,$3,NULL,scope); yyerror("Forgot semicolon"); yyerrok;}
+                                      |T_TYPEDEF typename error dims T_SEMI {yyerror("Wrong declaration of typedef"); yyerrok;}
+                                      |T_TYPEDEF typename T_ID dims error {hashtbl_insert(hashtbl,$3,NULL,scope); yyerror("Forgot semicolon"); yyerrok;}
                                     
 typename :                            standard_type
                                     | T_ID {hashtbl_insert(hashtbl,$1,NULL,scope);}
@@ -128,18 +130,21 @@ dims :                                dims dim
                                     | %empty
 
 dim :                                 T_LBRACK T_ICONST T_RBRACK
-                                    | error T_ICONST T_RBRACK { yyerror("Missing left bracket"); yyerrok ; }
-                                    | T_LBRACK T_ICONST error { yyerror("Missing right bracket"); yyerrok ; }
+                                    |error T_ICONST T_RBRACK {yyerror("Missing left bracket"); yyerrok;}
+                                    |T_LBRACK T_ICONST error {yyerror("Missing right bracket"); yyerrok;}
                                     | T_LBRACK T_RBRACK
-                                    | error T_RBRACK { yyerror("Missing left bracket"); yyerrok ; }
-                                    | T_LBRACK error { yyerror("Missing right bracket"); yyerrok ; }
+                                    | error T_RBRACK {yyerror("Missing left bracket"); yyerrok;}
+                                    | T_LBRACK error {yyerror("Missing right bracket"); yyerrok;}
 
-class_declaration :                   T_CLASS T_ID class_body T_SEMI {hashtbl_insert(hashtbl,$2,NULL,scope);}
-                                    | T_CLASS T_ID class_body error  {hashtbl_insert(hashtbl,$2,NULL,scope); yyerror("Forgot semicolon"); yyerrok ; }
+
+class_declaration :                   T_CLASS T_ID class_body T_SEMI  {hashtbl_insert(hashtbl,$2,NULL,scope); }
+                                      |error T_ID class_body T_SEMI {hashtbl_insert(hashtbl,$2,NULL,scope); yyerror("Wrong declaration of typedef"); yyerrok;} 
+                                      |T_CLASS error class_body T_SEMI {yyerror("Wrong declaration of typedef"); yyerrok;}
+                                      |T_CLASS T_ID class_body error {hashtbl_insert(hashtbl,$2,NULL,scope); yyerror("Forgot semicolon"); yyerrok;}
 
 class_body :                          parent T_LBRACE members_methods T_RBRACE
-                                    | parent error members_methods T_RBRACE { yyerror("Missing left brace"); yyerrok ; }
-                                    | parent T_LBRACE members_methods error { yyerror("Missing right brace"); yyerrok ; }
+                                      | parent error members_methods T_RBRACE {yyerror("Missing left brace"); yyerrok;}
+                                      | parent T_LBRACE members_methods error {yyerror("Missing right brace"); yyerrok;}
 
 parent :                              T_COLON T_ID {hashtbl_insert(hashtbl,$2,NULL,scope);}
                                     | %empty
@@ -150,9 +155,6 @@ members_methods :                     members_methods access member_or_method
 access :                              T_PRIVATE T_COLON 
                                     | T_PROTECTED T_COLON 
                                     | T_PUBLIC T_COLON 
-                                    | T_PROTECTED error  { yyerror("Missing colon"); yyerrok ; }
-                                    | T_PUBLIC error { yyerror("Missing colon"); yyerrok ; }
-                                    | T_PRIVATE error  { yyerror("Missing colon"); yyerrok ; }
                                     | %empty
 
 member_or_method :                    member
@@ -161,7 +163,8 @@ member_or_method :                    member
 member :                              var_declaration
 
 var_declaration :                     typename variabledefs T_SEMI
-                                      |typename variabledefs error { yyerror("Forgot semicolon"); yyerrok ; }
+                                      
+
 
 variabledefs :                        variabledefs T_COMMA variabledef
                                       | variabledef
@@ -171,35 +174,31 @@ variabledef :                         T_ID dims {hashtbl_insert(hashtbl,$1,NULL,
 method :                              short_func_declaration
 
 short_func_declaration :              short_par_func_header T_SEMI
+                                      |short_par_func_header error {yyerror("Forgot semicolon"); yyerrok;}
                                       | nopar_func_header T_SEMI
-                                      |short_par_func_header error { yyerror("Forgot semicolon"); yyerrok ; }
-                                      | nopar_func_header error { yyerror("Forgot semicolon"); yyerrok ; }
+                                      | nopar_func_header error {yyerror("Forgot semicolon"); yyerrok;}
+
 
 short_par_func_header :               func_header_start T_LPAREN parameter_type_list T_RPAREN
-                                      |func_header_start error parameter_type_list T_RPAREN { yyerror("Missing left parenthesis"); yyerrok ; }
-                                      |func_header_start T_LPAREN parameter_type_list error { yyerror("Missing right parenthesis"); yyerrok ; }
 func_header_start :                   typename T_ID {hashtbl_insert(hashtbl,$2,NULL,scope);}
 
 parameter_type_list :                 parameter_type_list T_COMMA typename pass_dims
                                       | typename pass_dims
-                                      | parameter_type_list error typename pass_dims { yyerror("Missing comma"); yyerrok ; }
+
 
 pass_dims :                           dims
                                     | T_REFER
 
 nopar_func_header :                   func_header_start T_LPAREN T_RPAREN
-                                      |func_header_start error T_RPAREN { yyerror("Missing left parenthesis"); yyerrok ; }
-                                      |func_header_start T_LPAREN error { yyerror("Missing right parenthesis"); yyerrok ; }
+
 
 enum_declaration :                    T_ENUM T_ID enum_body T_SEMI {hashtbl_insert(hashtbl,$2,NULL,scope);}
-                                      |T_ENUM T_ID enum_body error {hashtbl_insert(hashtbl,$2,NULL,scope); yyerror("Forgot semicolon"); yyerrok ; }
+
 
 enum_body :                           T_LBRACE id_list T_RBRACE
-                                      |error id_list T_RBRACE { yyerror("Missing left brace"); yyerrok ; }
-                                      |T_LBRACE id_list error { yyerror("Missing right parenthesis"); yyerrok ; }
+
 
 id_list :                             id_list T_COMMA T_ID initializer {hashtbl_insert(hashtbl,$3,NULL,scope);}
-                                      |
                                     | T_ID initializer {hashtbl_insert(hashtbl,$1,NULL,scope);}
 
 global_var_declaration :              typename init_variabledefs T_SEMI
@@ -215,8 +214,8 @@ initializer :                         T_ASSIGN init_value
 init_value :                          sign constant
                                     | sign T_ID {hashtbl_insert(hashtbl,$2,NULL,scope);}
                                     | T_LBRACE init_values T_RBRACE
-                                    | error init_values T_RBRACE { yyerror("Missing left brace"); yyerrok ; }
-                                    | T_LBRACE init_values error  { yyerror("Missing right brace"); yyerrok ; }
+                                    | error init_values T_RBRACE {yyerror("Missing left drace"); yyerrok;}
+                                    | T_LBRACE init_values error    {yyerror("Missing right drace"); yyerrok;}
                                     | T_STRING
 
 sign :                                T_ADDOP 
@@ -227,21 +226,15 @@ constant :                            T_CCONST
                                     | T_FCONST
 
 init_values :                         init_values T_COMMA init_value
-                                    | init_values error init_value { yyerror("Missing comma"); yyerrok ; }
                                     | init_value
 
 func_declaration :                    short_func_declaration
                                     | full_func_declaration
 
 full_func_declaration :               full_par_func_header T_LBRACE decl_statements T_RBRACE
-                                      |full_par_func_header error decl_statements T_RBRACE { yyerror("Missing left brace"); yyerrok ; }
-                                      |full_par_func_header T_LBRACE decl_statements error { yyerror("Missing right brace"); yyerrok ; }
                                     | nopar_class_func_header T_LBRACE decl_statements T_RBRACE 
-                                    | nopar_class_func_header error decl_statements T_RBRACE{ yyerror("Missing left brace"); yyerrok ; }
-                                    | nopar_class_func_header T_LBRACE decl_statements error { yyerror("Missing right brace"); yyerrok ; }
                                     | nopar_func_header T_LBRACE decl_statements T_RBRACE
-                                    | nopar_func_header error decl_statements T_RBRACE { yyerror("Missing left brace"); yyerrok ; }
-                                    | nopar_func_header T_LBRACE decl_statements error { yyerror("Missing right brace"); yyerrok ; }
+
 
 full_par_func_header :                class_func_header_start T_LPAREN parameter_list T_RPAREN
                                     | func_header_start T_LPAREN parameter_list T_RPAREN
