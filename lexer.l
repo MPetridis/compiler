@@ -1,4 +1,6 @@
 %{
+
+  #define  SHOW_TOKENS 0
   #include "syntax.tab.h"
   #include <stdio.h>
   #include <stdlib.h>
@@ -128,7 +130,7 @@ CCONST  '[\x20-\x7E']'
 \/"*"                       { printf("LINE[%d] Comment Found\n",yylineno);  BEGIN(COMMENTS) ;}
 <COMMENTS>(\\.|[^\\])       { }
 <COMMENTS>"*"\/             { BEGIN(INITIAL);  printf("LINE[%d] Comment Ended \n",yylineno) ;}
-"//".*                      {  printf("LINE[%d] Comment Found\n",yylineno); }
+"//".*                      { printf("LINE[%d] Comment Found\n",yylineno); }
 [ \t\n]                     {}
 
 
@@ -139,6 +141,9 @@ CCONST  '[\x20-\x7E']'
 
 
 void print_token(int token_id) {
+    if(SHOW_TOKENS == 0){
+        return;
+    }
     if (token_id == T_ICONST) {
         printf("LINE[%d] INTEGER TOKEN '%s'. Base 10: %d token id: %d\n", yylineno, yytext, str_to_int(yytext), token_id);
     } else if (token_id == T_FCONST) {
